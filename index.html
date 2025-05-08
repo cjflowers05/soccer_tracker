@@ -23,16 +23,26 @@
       margin-bottom: 1.5rem;
       box-shadow: 0 0 10px rgba(0,255,100,0.2);
     }
-    label, input, select, button {
+    label, button {
       display: block;
       margin: 0.5rem auto;
       font-size: 1rem;
     }
-    input, select {
-      padding: 0.5rem;
+    .stat-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+      text-align: center;
+    }
+    .stat-counter {
+      background: #334155;
+      padding: 1rem;
       border-radius: 0.5rem;
-      border: none;
-      width: 80%;
+    }
+    .stat-counter span {
+      display: block;
+      font-size: 1.2rem;
+      margin: 0.5rem 0;
     }
     button {
       background-color: #22c55e;
@@ -63,31 +73,28 @@
   <h1>Soccer Stat Tracker</h1>
 
   <div class="section">
-    <h2>Player Stats Entry</h2>
-    <form id="statForm">
-      <label>Player Name: <input type="text" id="playerName" required /></label>
-      <label>Shots Taken: <input type="number" id="shots" required /></label>
-      <label>Goals Scored: <input type="number" id="goals" required /></label>
-      <label>Assists: <input type="number" id="assists" required /></label>
-      <label>Passes Attempted: <input type="number" id="passesAttempted" required /></label>
-      <label>Passes Completed: <input type="number" id="passesCompleted" required /></label>
-      <label>Minutes Played: <input type="number" id="minutesPlayed" required /></label>
-      <label>Total Game Minutes: <input type="number" id="totalGameMinutes" required /></label>
-      <button type="submit">Add Stats</button>
-    </form>
+    <h2>Player Stat Counters</h2>
+    <div class="stat-buttons">
+      <div class="stat-counter"><span id="shots">Shots: 0</span><button onclick="increment('shots')">+ Shot</button></div>
+      <div class="stat-counter"><span id="goals">Goals: 0</span><button onclick="increment('goals')">+ Goal</button></div>
+      <div class="stat-counter"><span id="assists">Assists: 0</span><button onclick="increment('assists')">+ Assist</button></div>
+      <div class="stat-counter"><span id="passesAttempted">Passes Attempted: 0</span><button onclick="increment('passesAttempted')">+ Attempt</button></div>
+      <div class="stat-counter"><span id="passesCompleted">Passes Completed: 0</span><button onclick="increment('passesCompleted')">+ Complete</button></div>
+    </div>
+    <div class="stat-counter" style="margin-top: 1rem; text-align:center">
+      <span id="minutesPlayed">Minutes Played: 0</span>
+      <button onclick="startPlayerTimer()">Start Player Timer</button>
+      <button onclick="pausePlayerTimer()">Pause Player Timer</button>
+    </div>
+    <button onclick="addStatRow()">Add to Table</button>
   </div>
 
   <div class="section">
-    <h2>Player Metrics</h2>
+    <h2>Player Metrics Table</h2>
     <table id="statsTable">
       <thead>
         <tr>
-          <th>Player</th>
-          <th>Shot Accuracy %</th>
-          <th>Goal Contribution</th>
-          <th>Goals/Min</th>
-          <th>Pass Accuracy %</th>
-          <th>Time Played %</th>
+          <th>Shots</th><th>Goals</th><th>Assists</th><th>Shot Accuracy %</th><th>Goal Contribution</th><th>Goals/Min</th><th>Pass Accuracy %</th><th>Time Played %</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -95,78 +102,90 @@
   </div>
 
   <div class="section">
-    <h2>Game Tracker</h2>
-    <label>Half:
-      <select id="half">
-        <option value="1">1st Half</option>
-        <option value="2">2nd Half</option>
-      </select>
-    </label>
+    <h2>Game Clock & Score Tracker</h2>
     <div style="text-align:center">
-      <h3 id="timerDisplay">00:00</h3>
-      <button onclick="startTimer()">Start</button>
-      <button onclick="pauseTimer()">Pause</button>
-      <button onclick="resetTimer()">Reset</button>
+      <h3 id="gameTimer">40:00</h3>
+      <button onclick="startGameTimer()">Start</button>
+      <button onclick="pauseGameTimer()">Pause</button>
+      <button onclick="resetGameTimer()">Reset</button>
     </div>
-    <label>Home Score: <input type="number" id="homeScore" /></label>
-    <label>Opponent Score: <input type="number" id="opponentScore" /></label>
+    <div class="stat-buttons" style="margin-top:1rem">
+      <div class="stat-counter"><span id="homeScore">Home: 0</span><button onclick="goal('home')">+ Home Goal</button></div>
+      <div class="stat-counter"><span id="opponentScore">Opponent: 0</span><button onclick="goal('opponent')">+ Opponent Goal</button></div>
+    </div>
     <button onclick="saveGameResult()">Save Result</button>
     <div class="record-summary" id="teamRecord">Team Record: 0W - 0L - 0D</div>
   </div>
 
   <script>
-    const form = document.getElementById("statForm");
-    const tableBody = document.querySelector("#statsTable tbody");
-    const timerDisplay = document.getElementById("timerDisplay");
-    let timer, seconds = 0;
+    let counters = {
+      shots: 0, goals: 0, assists: 0, passesAttempted: 0, passesCompleted: 0, minutesPlayed: 0
+    };
+    let playerTimer, gameTimer, gameSeconds = 40 * 60, playingSeconds = 0;
     let wins = 0, losses = 0, draws = 0;
 
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      const name = document.getElementById("playerName").value;
-      const shots = +document.getElementById("shots").value;
-      const goals = +document.getElementById("goals").value;
-      const assists = +document.getElementById("assists").value;
-      const passesAttempted = +document.getElementById("passesAttempted").value;
-      const passesCompleted = +document.getElementById("passesCompleted").value;
-      const minutes = +document.getElementById("minutesPlayed").value;
-      const totalMinutes = +document.getElementById("totalGameMinutes").value;
-
-      const shotAcc = shots > 0 ? (goals / shots * 100).toFixed(1) : 0;
-      const goalContribution = goals + assists;
-      const goalsPerMinute = minutes > 0 ? (goals / minutes).toFixed(3) : 0;
-      const passAcc = passesAttempted > 0 ? (passesCompleted / passesAttempted * 100).toFixed(1) : 0;
-      const timePlayedPercent = totalMinutes > 0 ? (minutes / totalMinutes * 100).toFixed(1) : 0;
-
-      const row = `<tr><td>${name}</td><td>${shotAcc}%</td><td>${goalContribution}</td><td>${goalsPerMinute}</td><td>${passAcc}%</td><td>${timePlayedPercent}%</td></tr>`;
-      tableBody.insertAdjacentHTML("beforeend", row);
-      form.reset();
-    });
-
-    function startTimer() {
-      if (timer) return;
-      timer = setInterval(() => {
-        seconds++;
-        const min = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const sec = String(seconds % 60).padStart(2, '0');
-        timerDisplay.textContent = `${min}:${sec}`;
-      }, 1000);
+    function increment(stat) {
+      counters[stat]++;
+      document.getElementById(stat).textContent = `${stat.replace(/([A-Z])/g, ' $1')}: ${counters[stat]}`;
     }
 
-    function pauseTimer() {
-      clearInterval(timer);
-      timer = null;
+    function startPlayerTimer() {
+      if (!playerTimer) {
+        playerTimer = setInterval(() => {
+          counters.minutesPlayed++;
+          document.getElementById("minutesPlayed").textContent = `Minutes Played: ${counters.minutesPlayed}`;
+        }, 60000);
+      }
+    }
+    function pausePlayerTimer() {
+      clearInterval(playerTimer);
+      playerTimer = null;
     }
 
-    function resetTimer() {
-      pauseTimer();
-      seconds = 0;
-      timerDisplay.textContent = "00:00";
+    function addStatRow() {
+      const {shots, goals, assists, passesAttempted, passesCompleted, minutesPlayed} = counters;
+      const shotAcc = shots > 0 ? ((goals / shots) * 100).toFixed(1) : "0";
+      const goalContrib = goals + assists;
+      const goalsPerMin = minutesPlayed > 0 ? (goals / minutesPlayed).toFixed(3) : "0";
+      const passAcc = passesAttempted > 0 ? ((passesCompleted / passesAttempted) * 100).toFixed(1) : "0";
+      const timePlayedPct = 80 > 0 ? ((minutesPlayed / 80) * 100).toFixed(1) : "0";
+
+      const row = `<tr><td>${shots}</td><td>${goals}</td><td>${assists}</td><td>${shotAcc}%</td><td>${goalContrib}</td><td>${goalsPerMin}</td><td>${passAcc}%</td><td>${timePlayedPct}%</td></tr>`;
+      document.querySelector("#statsTable tbody").insertAdjacentHTML("beforeend", row);
+    }
+
+    function updateGameClock() {
+      const min = String(Math.floor(gameSeconds / 60)).padStart(2, '0');
+      const sec = String(gameSeconds % 60).padStart(2, '0');
+      document.getElementById("gameTimer").textContent = `${min}:${sec}`;
+    }
+    function startGameTimer() {
+      if (!gameTimer) {
+        gameTimer = setInterval(() => {
+          if (gameSeconds > 0) gameSeconds--;
+          updateGameClock();
+        }, 1000);
+      }
+    }
+    function pauseGameTimer() {
+      clearInterval(gameTimer);
+      gameTimer = null;
+    }
+    function resetGameTimer() {
+      pauseGameTimer();
+      gameSeconds = 40 * 60;
+      updateGameClock();
+    }
+
+    let home = 0, opponent = 0;
+    function goal(team) {
+      if (team === "home") home++;
+      else opponent++;
+      document.getElementById("homeScore").textContent = `Home: ${home}`;
+      document.getElementById("opponentScore").textContent = `Opponent: ${opponent}`;
     }
 
     function saveGameResult() {
-      const home = +document.getElementById("homeScore").value;
-      const opponent = +document.getElementById("opponentScore").value;
       if (home > opponent) wins++;
       else if (home < opponent) losses++;
       else draws++;
