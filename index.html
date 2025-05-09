@@ -1,53 +1,84 @@
-<label for="customGameMinutes">Set Game Length (min):</label>
-<input type="number" id="customGameMinutes" placeholder="e.g., 40" onchange="updateGameLength()" />
-    <button onclick="addStatRow()">Add to Table</button>
-    <button onclick="clearInputs()">Clear for Next Game</button>
-  <button onclick="resetGameScore()">Reset Game Score</button>
-    <button onclick="resetGameClockOnly()">Reset Game Timer</button>
-  </div>
-
-  <div class="section">
-    <h2>Player Metrics Table</h2>
-    <table id="statsTable">
-      <thead>
-        <tr>
-          <th>Player</th><th>Shots</th><th>Goals</th><th>Assists</th><th>Shot Accuracy %</th><th>Goal Contribution</th><th>Goals/Min</th><th>Pass Accuracy %</th><th>Time Played %</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-function resetGameScore() {
-  home = 0;
-  opponent = 0;
-  document.getElementById("homeScore").textContent = "Home: 0";
-  document.getElementById("opponentScore").textContent = "Opponent: 0";
-}
-
-function resetGameClockOnly() {
-  pauseGameTimer();
-  gameSeconds = customGameMinutes * 60;
-  updateGameClock();
-}
-
-function updateGameLength() {
-  const input = +document.getElementById("customGameMinutes").value;
-  if (!isNaN(input) && input > 0) {
-    customGameMinutes = input;
-    gameSeconds = input * 60;
-    updateGameClock();
-  }
-}
-
-let customGameMinutes = 40;
-
-    function clearInputs() {
-      for (let key in counters) counters[key] = 0;
-      ['shots', 'goals', 'assists', 'passesAttempted', 'passesCompleted'].forEach(stat => {
-        document.getElementById(stat).textContent = stat.replace(/([A-Z])/g, ' $1') + ": 0";
-      });
-      document.getElementById("minutesPlayed").textContent = "Minutes Played: 0";
-      document.getElementById("playerName").value = "";
-      pausePlayerTimer();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soccer Stat Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 1rem;
     }
+    h1, h2 {
+      text-align: center;
+    }
+    .section {
+      background: #1e293b;
+      border-radius: 1rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 10px rgba(0,255,100,0.2);
+    }
+    label, button, input {
+      display: block;
+      margin: 0.5rem auto;
+      font-size: 1rem;
+    }
+    input {
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      border: none;
+      width: 80%;
+    }
+    .stat-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+      text-align: center;
+    }
+    .stat-counter {
+      background: #334155;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    .stat-counter span {
+      display: block;
+      font-size: 1.2rem;
+      margin: 0.5rem 0;
+    }
+    button {
+      background-color: #22c55e;
+      color: black;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      margin-top: 1rem;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    .record-summary {
+      font-size: 1.2rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Soccer Stat Tracker</h1>
+
+  <!-- Full body content included earlier would go here -->
+
+</body>
+</html>
