@@ -1,99 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Soccer Stat Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Orbitron', sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
-      margin: 0;
-      padding: 1rem;
-    }
-    h1, h2 {
-      text-align: center;
-    }
-    .section {
-      background: #1e293b;
-      border-radius: 1rem;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 0 10px rgba(0,255,100,0.2);
-    }
-    label, button, input {
-      display: block;
-      margin: 0.5rem auto;
-      font-size: 1rem;
-    }
-    input {
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      border: none;
-      width: 80%;
-    }
-    .stat-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 0.5rem;
-      text-align: center;
-    }
-    .stat-counter {
-      background: #334155;
-      padding: 1rem;
-      border-radius: 0.5rem;
-    }
-    .stat-counter span {
-      display: block;
-      font-size: 1.2rem;
-      margin: 0.5rem 0;
-    }
-    button {
-      background-color: #22c55e;
-      color: black;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-    }
-    table {
-      width: 100%;
-      margin-top: 1rem;
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #334155;
-      padding: 0.5rem;
-      text-align: center;
-    }
-    .record-summary {
-      font-size: 1.2rem;
-      text-align: center;
-      margin-top: 1rem;
-    }
-  </style>
-</head>
-<body>
-  <h1>Soccer Stat Tracker</h1>
-
-  <div class="section">
-    <h2>Player Stat Counters</h2>
-    <input type="text" id="playerName" placeholder="Player Name" />
-    <div class="stat-buttons">
-      <div class="stat-counter"><span id="shots">Shots: 0</span><button onclick="increment('shots')">+ Shot</button></div>
-      <div class="stat-counter"><span id="goals">Goals: 0</span><button onclick="increment('goals')">+ Goal</button></div>
-      <div class="stat-counter"><span id="assists">Assists: 0</span><button onclick="increment('assists')">+ Assist</button></div>
-      <div class="stat-counter"><span id="passesAttempted">Passes Attempted: 0</span><button onclick="increment('passesAttempted')">+ Attempt</button></div>
-      <div class="stat-counter"><span id="passesCompleted">Passes Completed: 0</span><button onclick="increment('passesCompleted')">+ Complete</button></div>
-    </div>
-    <div class="stat-counter" style="margin-top: 1rem; text-align:center">
-      <span id="minutesPlayed">Minutes Played: 0</span>
-      <button onclick="startPlayerTimer()">Start Player Timer</button>
-      <button onclick="pausePlayerTimer()">Pause Player Timer</button>
-    </div>
+<label for="customGameMinutes">Set Game Length (min):</label>
+<input type="number" id="customGameMinutes" placeholder="e.g., 40" onchange="updateGameLength()" />
     <button onclick="addStatRow()">Add to Table</button>
+    <button onclick="clearInputs()">Clear for Next Game</button>
+  <button onclick="resetGameScore()">Reset Game Score</button>
+    <button onclick="resetGameClockOnly()">Reset Game Timer</button>
   </div>
 
   <div class="section">
@@ -108,97 +18,36 @@
     </table>
   </div>
 
-  <div class="section">
-    <h2>Game Clock & Score Tracker</h2>
-    <div style="text-align:center">
-      <h3 id="gameTimer">40:00</h3>
-      <button onclick="startGameTimer()">Start</button>
-      <button onclick="pauseGameTimer()">Pause</button>
-      <button onclick="resetGameTimer()">Reset</button>
-    </div>
-    <div class="stat-buttons" style="margin-top:1rem">
-      <div class="stat-counter"><span id="homeScore">Home: 0</span><button onclick="goal('home')">+ Home Goal</button></div>
-      <div class="stat-counter"><span id="opponentScore">Opponent: 0</span><button onclick="goal('opponent')">+ Opponent Goal</button></div>
-    </div>
-    <button onclick="saveGameResult()">Save Result</button>
-    <div class="record-summary" id="teamRecord">Team Record: 0W - 0L - 0D</div>
-  </div>
+function resetGameScore() {
+  home = 0;
+  opponent = 0;
+  document.getElementById("homeScore").textContent = "Home: 0";
+  document.getElementById("opponentScore").textContent = "Opponent: 0";
+}
 
-  <script>
-    let counters = {
-      shots: 0, goals: 0, assists: 0, passesAttempted: 0, passesCompleted: 0, minutesPlayed: 0
-    };
-    let playerTimer, gameTimer, gameSeconds = 40 * 60;
-    let wins = 0, losses = 0, draws = 0;
+function resetGameClockOnly() {
+  pauseGameTimer();
+  gameSeconds = customGameMinutes * 60;
+  updateGameClock();
+}
 
-    function increment(stat) {
-      counters[stat]++;
-      document.getElementById(stat).textContent = `${stat.replace(/([A-Z])/g, ' $1')}: ${counters[stat]}`;
-    }
+function updateGameLength() {
+  const input = +document.getElementById("customGameMinutes").value;
+  if (!isNaN(input) && input > 0) {
+    customGameMinutes = input;
+    gameSeconds = input * 60;
+    updateGameClock();
+  }
+}
 
-    function startPlayerTimer() {
-      if (!playerTimer) {
-        playerTimer = setInterval(() => {
-          counters.minutesPlayed++;
-          document.getElementById("minutesPlayed").textContent = `Minutes Played: ${counters.minutesPlayed}`;
-        }, 60000);
-      }
-    }
-    function pausePlayerTimer() {
-      clearInterval(playerTimer);
-      playerTimer = null;
-    }
+let customGameMinutes = 40;
 
-    function addStatRow() {
-      const playerName = document.getElementById("playerName").value || "Unnamed";
-      const {shots, goals, assists, passesAttempted, passesCompleted, minutesPlayed} = counters;
-      const shotAcc = shots > 0 ? ((goals / shots) * 100).toFixed(1) : "0";
-      const goalContrib = goals + assists;
-      const goalsPerMin = minutesPlayed > 0 ? (goals / minutesPlayed).toFixed(3) : "0";
-      const passAcc = passesAttempted > 0 ? ((passesCompleted / passesAttempted) * 100).toFixed(1) : "0";
-      const timePlayedPct = 80 > 0 ? ((minutesPlayed / 80) * 100).toFixed(1) : "0";
-
-      const row = `<tr><td>${playerName}</td><td>${shots}</td><td>${goals}</td><td>${assists}</td><td>${shotAcc}%</td><td>${goalContrib}</td><td>${goalsPerMin}</td><td>${passAcc}%</td><td>${timePlayedPct}%</td></tr>`;
-      document.querySelector("#statsTable tbody").insertAdjacentHTML("beforeend", row);
+    function clearInputs() {
+      for (let key in counters) counters[key] = 0;
+      ['shots', 'goals', 'assists', 'passesAttempted', 'passesCompleted'].forEach(stat => {
+        document.getElementById(stat).textContent = stat.replace(/([A-Z])/g, ' $1') + ": 0";
+      });
+      document.getElementById("minutesPlayed").textContent = "Minutes Played: 0";
+      document.getElementById("playerName").value = "";
+      pausePlayerTimer();
     }
-
-    function updateGameClock() {
-      const min = String(Math.floor(gameSeconds / 60)).padStart(2, '0');
-      const sec = String(gameSeconds % 60).padStart(2, '0');
-      document.getElementById("gameTimer").textContent = `${min}:${sec}`;
-    }
-    function startGameTimer() {
-      if (!gameTimer) {
-        gameTimer = setInterval(() => {
-          if (gameSeconds > 0) gameSeconds--;
-          updateGameClock();
-        }, 1000);
-      }
-    }
-    function pauseGameTimer() {
-      clearInterval(gameTimer);
-      gameTimer = null;
-    }
-    function resetGameTimer() {
-      pauseGameTimer();
-      gameSeconds = 40 * 60;
-      updateGameClock();
-    }
-
-    let home = 0, opponent = 0;
-    function goal(team) {
-      if (team === "home") home++;
-      else opponent++;
-      document.getElementById("homeScore").textContent = `Home: ${home}`;
-      document.getElementById("opponentScore").textContent = `Opponent: ${opponent}`;
-    }
-
-    function saveGameResult() {
-      if (home > opponent) wins++;
-      else if (home < opponent) losses++;
-      else draws++;
-      document.getElementById("teamRecord").textContent = `Team Record: ${wins}W - ${losses}L - ${draws}D`;
-    }
-  </script>
-</body>
-</html>
